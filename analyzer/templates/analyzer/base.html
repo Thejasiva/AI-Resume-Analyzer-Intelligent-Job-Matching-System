@@ -1,0 +1,5 @@
+{% load static %}
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ResumeIQ</title><link rel="stylesheet" href="{% static 'analyzer/style.css' %}"></head><body>
+<header><div class="nav"><a class="brand" href="/">Resume<span>IQ</span></a><nav><a href="/">Dashboard</a><a href="/jobs/">Jobs</a></nav></div></header>
+<main class="container">{% for message in messages %}<div class="flash">{{ message }}</div>{% endfor %}{% block content %}{% endblock %}</main>
+<footer>ResumeIQ • AI/NLP Resume Analysis & Intelligent Job Matching</footer></body></html>

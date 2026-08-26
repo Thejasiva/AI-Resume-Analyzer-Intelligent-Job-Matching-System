@@ -1,0 +1,13 @@
+Django==5.2.7
+gunicorn
+whitenoise
+dj-database-url
+psycopg2-binary
+PyMuPDF
+python-docx
+pandas
+numpy
+Pillow
+scikit-learn
+spacy
+PyPDF2
