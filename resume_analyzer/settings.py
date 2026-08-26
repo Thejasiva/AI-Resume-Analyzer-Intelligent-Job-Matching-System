@@ -2,6 +2,11 @@ from pathlib import Path
 import os
 import dj_database_url
 
+
+# ============================================================
+# BASE DIRECTORY
+# ============================================================
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
@@ -14,17 +19,56 @@ SECRET_KEY = os.environ.get(
     "django-insecure-development-key-change-in-production"
 )
 
-DEBUG = os.environ.get("DEBUG", "False").lower() == "true"
+DEBUG = os.environ.get("DEBUG", "True").lower() == "true"
 
-ALLOWED_HOSTS = []
 
-if os.environ.get("RENDER_EXTERNAL_HOSTNAME"):
-    ALLOWED_HOSTS.append(os.environ["RENDER_EXTERNAL_HOSTNAME"])
+# ============================================================
+# ALLOWED HOSTS
+# ============================================================
 
-ALLOWED_HOSTS += [
+ALLOWED_HOSTS = [
     "localhost",
     "127.0.0.1",
 ]
+
+# Render automatically provides RENDER_EXTERNAL_HOSTNAME
+RENDER_EXTERNAL_HOSTNAME = os.environ.get("RENDER_EXTERNAL_HOSTNAME")
+
+if RENDER_EXTERNAL_HOSTNAME:
+    ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
+
+# Optional custom hosts
+CUSTOM_ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS")
+
+if CUSTOM_ALLOWED_HOSTS:
+    ALLOWED_HOSTS += [
+        host.strip()
+        for host in CUSTOM_ALLOWED_HOSTS.split(",")
+        if host.strip()
+    ]
+
+
+# ============================================================
+# CSRF TRUSTED ORIGINS
+# ============================================================
+
+CSRF_TRUSTED_ORIGINS = []
+
+RENDER_EXTERNAL_HOSTNAME = os.environ.get("RENDER_EXTERNAL_HOSTNAME")
+
+if RENDER_EXTERNAL_HOSTNAME:
+    CSRF_TRUSTED_ORIGINS.append(
+        f"https://{RENDER_EXTERNAL_HOSTNAME}"
+    )
+
+CUSTOM_CSRF_ORIGINS = os.environ.get("CSRF_TRUSTED_ORIGINS")
+
+if CUSTOM_CSRF_ORIGINS:
+    CSRF_TRUSTED_ORIGINS += [
+        origin.strip()
+        for origin in CUSTOM_CSRF_ORIGINS.split(",")
+        if origin.strip()
+    ]
 
 
 # ============================================================
@@ -39,6 +83,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
 
+    # Project application
     "analyzer",
 ]
 
@@ -50,7 +95,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
 
-    # WhiteNoise
+    # WhiteNoise serves static files in production
     "whitenoise.middleware.WhiteNoiseMiddleware",
 
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -63,7 +108,7 @@ MIDDLEWARE = [
 
 
 # ============================================================
-# URLS
+# URL CONFIGURATION
 # ============================================================
 
 ROOT_URLCONF = "resume_analyzer.urls"
@@ -78,7 +123,7 @@ TEMPLATES = [
         "BACKEND": "django.template.backends.django.DjangoTemplates",
 
         "DIRS": [
-            BASE_DIR / "analyzer" / "templates"
+            BASE_DIR / "analyzer" / "templates",
         ],
 
         "APP_DIRS": True,
@@ -115,6 +160,7 @@ if DATABASE_URL:
             ssl_require=True,
         )
     }
+
 else:
     DATABASES = {
         "default": {
@@ -128,7 +174,32 @@ else:
 # PASSWORD VALIDATION
 # ============================================================
 
-AUTH_PASSWORD_VALIDATORS = []
+AUTH_PASSWORD_VALIDATORS = [
+    {
+        "NAME": (
+            "django.contrib.auth.password_validation."
+            "UserAttributeSimilarityValidator"
+        ),
+    },
+    {
+        "NAME": (
+            "django.contrib.auth.password_validation."
+            "MinimumLengthValidator"
+        ),
+    },
+    {
+        "NAME": (
+            "django.contrib.auth.password_validation."
+            "CommonPasswordValidator"
+        ),
+    },
+    {
+        "NAME": (
+            "django.contrib.auth.password_validation."
+            "NumericPasswordValidator"
+        ),
+    },
+]
 
 
 # ============================================================
@@ -153,9 +224,10 @@ STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
 STATICFILES_DIRS = [
-    BASE_DIR / "analyzer" / "static"
+    BASE_DIR / "analyzer" / "static",
 ]
 
+# WhiteNoise compressed static files
 STATICFILES_STORAGE = (
     "whitenoise.storage.CompressedManifestStaticFilesStorage"
 )
@@ -182,8 +254,66 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # ============================================================
 
 if not DEBUG:
-    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
+    # Render uses HTTPS
+    SECURE_PROXY_SSL_HEADER = (
+        "HTTP_X_FORWARDED_PROTO",
+        "https",
+    )
+
+    SECURE_SSL_REDIRECT = True
 
     SESSION_COOKIE_SECURE = True
 
     CSRF_COOKIE_SECURE = True
+
+    SECURE_BROWSER_XSS_FILTER = True
+
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+
+    X_FRAME_OPTIONS = "DENY"
+
+    SECURE_HSTS_SECONDS = 31536000
+
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+
+    SECURE_HSTS_PRELOAD = True
+
+
+# ============================================================
+# FILE UPLOAD SETTINGS
+# ============================================================
+
+# Resume uploads can be reasonably large
+DATA_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024
+
+FILE_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024
+
+
+# ============================================================
+# LOGIN / LOGOUT
+# ============================================================
+
+LOGIN_URL = "/login/"
+
+LOGIN_REDIRECT_URL = "/"
+
+LOGOUT_REDIRECT_URL = "/"
+
+
+# ============================================================
+# SESSION SETTINGS
+# ============================================================
+
+SESSION_COOKIE_HTTPONLY = True
+
+CSRF_COOKIE_HTTPONLY = False
+
+
+# ============================================================
+# MESSAGE STORAGE
+# ============================================================
+
+MESSAGE_STORAGE = (
+    "django.contrib.messages.storage.session.SessionStorage"
+)
